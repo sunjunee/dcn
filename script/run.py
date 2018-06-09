@@ -1,11 +1,11 @@
-mport numpy as np
+import numpy as np
 import pandas as pd
 import keras.backend as K
 from keras import layers
 from keras.layers import Dense
 from keras.optimizers import Adam
 from keras.layers import Input, Embedding, Reshape, Add
-from keras.layers import Flatten, merge, Lambda
+from keras.layers import Flatten, concatenate, Lambda
 from keras.models import Model
 from keras.utils.vis_utils import plot_model
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
@@ -44,7 +44,7 @@ def continous_input(name):
 # Embed "Soil_Type" column (embedding dim == 15), we have 8 cross layers of size 29
 def fit(inp_layer, inp_embed, X, y):
     #inp_layer, inp_embed = feature_generate(X, cate_columns, cont_columns)
-    input = merge(inp_embed, mode = 'concat')
+    input = concatenate(inp_embed, axis=-1)
     # deep layer
     for i in range(6):
         if i == 0:
@@ -54,11 +54,11 @@ def fit(inp_layer, inp_embed, X, y):
     # cross layer
     cross = CrossLayer(output_dim = input.shape[2].value, num_layer = 8, name = "cross_layer")(input)
     #concat both layers
-    output = merge([deep, cross], mode = 'concat')
+    output = concatenate([deep, cross], axis=-1)
     output = Dense(y.shape[1], activation = 'softmax')(output)
     model = Model(inp_layer, output)
     print(model.summary())
-    plot_model(model, to_file = 'model.png', show_shapes = True)
+    #plot_model(model, to_file = 'model.png', show_shapes = True)
     model.compile(Adam(0.01), loss = 'categorical_crossentropy', metrics = ["accuracy"])
     model.fit([X[c] for c in X.columns], y, batch_size = 256, epochs = 10)
     return model
